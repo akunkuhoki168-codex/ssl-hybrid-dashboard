@@ -216,6 +216,7 @@ body.isStale #vSig .card,body.isStale #vDet .card{opacity:.45;transition:opacity
     <div class="card">
       <div class="rbtop"><span class="pill stp" id="rbPill"><i></i><span id="rbPillT">LOADING</span></span><span class="pill stale hide" id="rbStalePill">STALE</span><span class="meta" id="rbMode"></span></div>
       <div class="rbdet" id="rbDetail"></div>
+      <div class="meta" id="rbRsiLine" style="margin-top:4px;font-weight:600"></div>
       <div class="rbstale hide" id="rbStale"></div>
       <div class="rbinfo"><b>Data from the 24/7 paper bot, updated every 10 min.</b> Positions as of the export <b id="rbExp">–</b> WIB <span id="rbAgo"></span>; this page re-checks for a new export every 60 s. <b>P&amp;L is marked live</b> in your browser from Binance prices every 5 s. Paper trading only: no exchange keys, no real orders.</div>
       <div class="rb-ctl">
@@ -597,10 +598,13 @@ window.RB = (function () {
     const tf = curTf(), sides = curSides(), filt = curFilter();
     const startW = (LIVE_SNAP && alive && LIVE_SNAP.start_wib) || (liveFresh() && LIVE_CTL && LIVE_CTL.start_wib) || D.start_wib;
     const sidesTxt = sides === "long" ? "Long-only" : "Long+Short";
+    const rf = (LIVE_SNAP && alive && LIVE_SNAP.rsi_filter) || D.rsi_filter;
+    const rsiTxt = (LIVE_SNAP && alive && LIVE_SNAP.rsi_filter_text) || D.rsi_filter_text || (rf ? (rf.enabled ? `RSI(${rf.length || 14}) filter: Long <${rf.long_below ?? 35} / Short >${rf.short_above ?? 65}` : `RSI(${rf.length || 14}) filter: OFF`) : "RSI(14) filter: Long <35 / Short >65");
     $("rbPill").className = "pill " + (st === "RUNNING" ? "run" : st === "PAUSED" ? "pau" : "stp"); $("rbPillT").textContent = st;
     $("rbStalePill").classList.toggle("hide", !stale); $("rbStale").classList.toggle("hide", !stale);
     if (stale) $("rbStale").textContent = `STALE: the last export is ${ageMin >= 120 ? (ageMin / 60).toFixed(1) + " h" : Math.round(ageMin) + " min"} old and no live heartbeat has arrived. The box or its publisher may be offline, so the status and positions below may be out of date (prices are still live).`;
-    $("rbMode").innerHTML = `${esc(D.mode)} · <b>${esc(tf)}</b> · <span class="szp sig">${esc(sidesTxt)}</span> · <span class="szp sig">filter ${filt ? "ON +2%/24h" : "OFF"}</span> · <span class="szp sig">${esc(D.signal_timing_text || "Signals: on candle close")}</span> · since ${esc(startW)} WIB` + (D.pool ? ` <span class="szp">Max positions ${D.pool.max_positions} · pool sizing · ${D.pool.slots_used}/${D.pool.max_positions}</span>` : "");
+    $("rbMode").innerHTML = `${esc(D.mode)} · <b>${esc(tf)}</b> · <span class="szp sig">${esc(sidesTxt)}</span> · <span class="szp sig">filter ${filt ? "ON +2%/24h" : "OFF"}</span> · <span class="szp sig">${esc(rsiTxt)}</span> · <span class="szp sig">${esc(D.signal_timing_text || "Signals: on candle close")}</span> · since ${esc(startW)} WIB` + (D.pool ? ` <span class="szp">Max positions ${D.pool.max_positions} · pool sizing · ${D.pool.slots_used}/${D.pool.max_positions}</span>` : "");
+    if ($("rbRsiLine")) $("rbRsiLine").textContent = rsiTxt + " (entries only; exits unchanged)";
     let det = st === "RUNNING" ? "Bot alive" : (D.status_detail || "");
     if (alive && LIVE_SNAP && LIVE_SNAP.hb_wib) det = "Bot alive, live snapshot " + String(LIVE_SNAP.hb_wib).slice(11, 19) + " WIB";
     else if (st === "RUNNING" && num(D.hb_age_s)) det = "Bot alive, heartbeat " + Math.round(D.hb_age_s) + " s before the export";
@@ -649,20 +653,22 @@ window.RB = (function () {
     const mini = c => {
       const up = c.arrow === "up", la = c.live_arrow > 0 ? `<b class="pos">▲ live</b>` : c.live_arrow < 0 ? `<b class="neg">▼ live</b>` : c.arrow ? `<b class="${up ? "pos" : "neg"}">${up ? "▲" : "▼"}</b>${num(c.bars_since) ? c.bars_since : ""}` : "–";
       const p = pend[c.coin], pd = p && p.act ? `<div class="pd">⏳ ${IB ? "arrow after export" : "pending " + p.act}</div>` : "";
+      const rsiV = num(c.rsi) ? `<b class="${c.rsi < 35 ? "pos" : c.rsi > 65 ? "neg" : ""}">${c.rsi.toFixed(1)}</b>` : "–";
       return `<button class="cc mini${c.coin === coin ? " sel" : ""}${c.tradable === false ? " exl" : ""}" data-c="${esc(c.coin)}"><div class="t"><span class="n">${esc(c.coin)}</span><span>${la}</span></div>
         <div class="t m"><span>${px(c.price)}</span><span class="${num(c.vs_exit_pct) ? (c.vs_exit_pct >= 0 ? "pos" : "neg") : ""}" title="price vs Exit SSL line">${num(c.vs_exit_pct) ? pct(c.vs_exit_pct) : "–"}</span></div>
-        <div class="t m"><span>${c.rank ? "#" + c.rank : ""}</span><span>${c.trades ? c.trades + " tr" : ""}</span></div>${pd}</button>`;
+        <div class="t m"><span>RSI ${rsiV}</span><span>${c.rank ? "#" + c.rank : ""}${c.trades ? " · " + c.trades + "tr" : ""}</span></div>${pd}</button>`;
     };
     $("rbCards").innerHTML = held.map(c => {
       const up = c.arrow === "up", ar = c.arrow ? `<b class="${up ? "pos" : "neg"}">${up ? "▲" : "▼"}</b> ${esc((c.arrow_wib || "").slice(11))}${num(c.bars_since) ? ` (${c.bars_since} bars)` : ""}` : "no arrow";
       const ex = num(c.vs_exit_pct) ? `<span class="${c.vs_exit_pct >= 0 ? "pos" : "neg"}">${c.vs_exit_pct >= 0 ? "above" : "below"} exit ${pct(c.vs_exit_pct)}</span>` : "";
+      const rsiH = num(c.rsi) ? ` · RSI <b class="${c.rsi < 35 ? "pos" : c.rsi > 65 ? "neg" : ""}">${c.rsi.toFixed(1)}</b>` : "";
       const heldP = c.pos === "long" || c.pos === "short";
       const pl = heldP ? `<span class="${cls(c.unreal)}">${usd(c.unreal, 1)} (${pct(c.unreal_pct)})</span><br>entry ${px(c.entry)}` + (num(c.tp_px) ? `<br><span class="pos">TP ${px(c.tp_px)}</span> ${pct(c.to_tp, 1)}<br><span class="neg">SL ${px(c.sl_px)}</span> ${pct(c.to_sl, 1)}` : "") : (D.pool ? "in pool cash" : `cash ${usd(c.value)}`);
       const p = pend[c.coin], pd = (c.hit ? `<div class="pd hit">⚠ ${c.hit} hit, bot will close</div>` : "") + (p && p.act ? `<div class="pd">⏳ pending: bot will ${p.act === "BUY" && D.pool && !D.pool.free_slots ? "skip (slots full)" : p.act} at next open</div>` : "");
       const tag = c.pos === "short" ? "tagS" : c.pos === "long" ? "tagL" : "tagC";
       const lab = c.pos === "short" ? "SHORT" : c.pos === "long" ? "LONG" : "CASH";
       return `<button class="cc wide${c.coin === coin ? " sel" : ""}" data-c="${esc(c.coin)}"><div class="t"><span class="n">${esc(c.coin)}${c.rank ? ` <small class="meta">#${c.rank}</small>` : ""}</span><span class="${tag}">${lab}</span></div>
-        <div class="px">${px(c.price)}</div><div class="m">${pl}${c.entry_reason ? ` <span class="rs ${esc(c.entry_reason)}">${esc(c.entry_reason)}</span>` : ""}<br>Last ${ar}<br>${ex}</div>${pd}</button>`;
+        <div class="px">${px(c.price)}</div><div class="m">${pl}${c.entry_reason ? ` <span class="rs ${esc(c.entry_reason)}">${esc(c.entry_reason)}</span>` : ""}<br>Last ${ar}<br>${ex}${rsiH}</div>${pd}</button>`;
     }).join("") + rest.map(mini).join("");
     $("rbCards").querySelectorAll(".cc").forEach(b => b.onclick = () => { coin = b.dataset.c; localStorage.setItem("rbCoin", coin); cards(); coinChart(true); });
   }
@@ -720,7 +726,7 @@ window.RB = (function () {
     const c = V && V.coins.find(x => x.coin === coin); if (!c) return;
     const heldI = c.pos === "long" || c.pos === "short";
     const I = [["Position", c.pos === "short" ? "SHORT" : c.pos === "long" ? "LONG" : "CASH"], ["Price" + (c.live ? " · live" : ""), px(c.price)], ["Entry", heldI ? px(c.entry) : "–"], ["Unrealised", heldI ? usd(c.unreal, 1) + " · " + pct(c.unreal_pct) : "–"],
-      ["Exit line", px(c.exit_line)], ["Price vs exit", num(c.vs_exit_pct) ? pct(c.vs_exit_pct) + (c.above_exit ? " above" : " below") : "–"], ["Last arrow", c.arrow ? (c.arrow === "up" ? "▲ up " : "▼ down ") + (c.arrow_wib || "").slice(11) : "–"], ["Baseline", px(c.baseline)],
+      ["Exit line", px(c.exit_line)], ["Price vs exit", num(c.vs_exit_pct) ? pct(c.vs_exit_pct) + (c.above_exit ? " above" : " below") : "–"], ["RSI(14)", num(c.rsi) ? c.rsi.toFixed(1) : "–"], ["Last arrow", c.arrow ? (c.arrow === "up" ? "▲ up " : "▼ down ") + (c.arrow_wib || "").slice(11) : "–"], ["Baseline", px(c.baseline)],
       ["Units", num(c.units) ? String(+c.units.toPrecision(6)) : "–"], ...(num(c.tp_px) ? [["TP · to go", px(c.tp_px) + " · " + pct(c.to_tp)], ["SL · to go", px(c.sl_px) + " · " + pct(c.to_sl)], ["Net if sold", usd(c.net, 1)], ["Slot size", usd(c.size)]] : []), ["Realised", usd(c.realised, 1)], ["Value now", usd(c.value)], ["Buy & hold value", usd(c.bh_value)]];
     $("rbCinfo").innerHTML = I.map(([l, v]) => `<div>${esc(l)}<b>${esc(v)}</b></div>`).join("");
   }
@@ -786,14 +792,15 @@ window.RB = (function () {
     $("rbSlots").innerHTML = sl.join("");
     $("rbPoolN").innerHTML = `One shared cash pool since ${esc((P.since_wib || "").slice(0, 16))} WIB. Size per trade = equity ÷ max positions, capped at pool cash. ${D.sides === "long" ? "Long-only: up arrow buys, down arrow sells." : "Long+Short (1x paper): up arrow closes a short and opens a long; down arrow closes a long and opens a short."} More arrows than free slots at once → the strongest (close − exit line)/ATR wins. TP/SL checked by the bot every 5 s (closed at the level price), catch-up on bar high/low with SL first; after TP/SL a coin needs a new arrow.` +
       (P.switches || []).map(s => `<br>${esc(s.at_wib.slice(5, 16))} ${esc(s.why)}: equity ${usd(s.equity_before)} → ${usd(s.equity_after)} (fee ${usd(s.fees)})`).join("");
-    $("rbSkip").innerHTML = (P.skipped || []).map(k => { const want = (k.side || "long") === "short" ? "▼ short" : "▲ long"; const ret = num(k.ret_24h) ? ` · 24h ${pct(k.ret_24h, 2)}` : "";
-      return `<div class="skp">${esc((k.wib || "").slice(5))} · <b>${esc(k.coin)}</b> ${want} ${esc(k.tf || "")} skipped: ${esc(k.reason)}${ret} (${esc((k.held || []).join("+"))} held, strength ${num(k.strength) ? k.strength.toFixed(2) : "–"})</div>`; }).join("") || `<div class="meta">None yet (${P.n_skipped || 0}).</div>`;
+    $("rbSkip").innerHTML = (P.skipped || []).map(k => { const want = (k.side || "long") === "short" ? "▼ short" : "▲ long"; const ret = num(k.ret_24h) ? ` · 24h ${pct(k.ret_24h, 2)}` : ""; const rsiS = num(k.rsi) ? ` · RSI ${k.rsi.toFixed(1)}` : "";
+      return `<div class="skp">${esc((k.wib || "").slice(5))} · <b>${esc(k.coin)}</b> ${want} ${esc(k.tf || "")} skipped: ${esc(k.reason)}${ret}${rsiS} (${esc((k.held || []).join("+"))} held, strength ${num(k.strength) ? k.strength.toFixed(2) : "–"})</div>`; }).join("") || `<div class="meta">None yet (${P.n_skipped || 0}).</div>`;
   }
   function rules() {
     if (typeof fillResetCap === "function") fillResetCap();
     const r = D.rules || {};
     const sw = [...(D.mode_switches || []).map(s => `${s.at} mode ${s.from}→${s.to}`), ...(D.tf_switches || []).map(s => `${s.at} timeframe ${s.from}→${s.to}`)].sort();
-    $("rbRules").innerHTML = `<b>Rules:</b> ${esc(D.mode_text || D.mode)}. Entry: ${esc(r.entry || "–")}. Exit: ${esc(r.exit || "–")}. Fill: ${esc(r.fill || "–")}. Fee ${num(r.fee) ? (r.fee * 100).toFixed(2) + "%" : "–"} per side. Capital ${usd(D.capital)} ${D.pool ? `traded as one pool (max ${D.pool.max_positions} positions, size = equity ÷ max positions capped at cash, TP +$${D.pool.tp_usd} / SL −$${D.pool.sl_usd} net per position) since ${esc((D.pool.since_wib || "").slice(0, 16))} WIB; before that split $100 per coin over` : "split over"} ZEC, NEAR, PEPE, SOL, XRP since ${esc(D.start_wib)} WIB${D.epoch_from_wib ? `; since ${esc(D.epoch_from_wib.slice(0, 16))} WIB the low-cap universe (${(D.universe || []).length} Binance USDT coins, CoinGecko top-${D.exclude_top_mcap || 50} by market cap excluded, re-checked daily): ${(D.universe || []).map(c => esc(c) + (D.universe_ranks && D.universe_ranks[c] ? " #" + D.universe_ranks[c].rank : "")).join(", ")}` : ""}. ${D.signal_timing === "intrabar" ? "Signals intrabar: every ~5 s the Exit SSL is recomputed on the forming candle with the live price as its close; an up arrow buys at once at the live price (ARROW_INTRABAR), a down arrow on a held coin sells at once; max one entry and one exit per coin per candle, no re-entry in the candle of an exit; an arrow that disappears before the close does not undo the fill." : ""} Bot prices: Bot prices: ${esc(D.source || "Binance")}.` +
+    const rsiRule = D.rsi_filter_text || (D.rsi_filter ? (D.rsi_filter.enabled ? `RSI(${D.rsi_filter.length || 14}) filter: Long <${D.rsi_filter.long_below} / Short >${D.rsi_filter.short_above}` : `RSI(${D.rsi_filter.length || 14}) filter: OFF`) : "–");
+    $("rbRules").innerHTML = `<b>Rules:</b> ${esc(D.mode_text || D.mode)}. Entry: ${esc(r.entry || "–")}. ${esc(rsiRule)}. Exit: ${esc(r.exit || "–")}. Fill: ${esc(r.fill || "–")}. Fee ${num(r.fee) ? (r.fee * 100).toFixed(2) + "%" : "–"} per side. Capital ${usd(D.capital)} ${D.pool ? `traded as one pool (max ${D.pool.max_positions} positions, size = equity ÷ max positions capped at cash, TP +$${D.pool.tp_usd} / SL −$${D.pool.sl_usd} net per position) since ${esc((D.pool.since_wib || "").slice(0, 16))} WIB; before that split $100 per coin over` : "split over"} ZEC, NEAR, PEPE, SOL, XRP since ${esc(D.start_wib)} WIB${D.epoch_from_wib ? `; since ${esc(D.epoch_from_wib.slice(0, 16))} WIB the low-cap universe (${(D.universe || []).length} Binance USDT coins, CoinGecko top-${D.exclude_top_mcap || 50} by market cap excluded, re-checked daily): ${(D.universe || []).map(c => esc(c) + (D.universe_ranks && D.universe_ranks[c] ? " #" + D.universe_ranks[c].rank : "")).join(", ")}` : ""}. ${D.signal_timing === "intrabar" ? "Signals intrabar: every ~5 s the Exit SSL is recomputed on the forming candle with the live price as its close; an up arrow buys at once at the live price (ARROW_INTRABAR), a down arrow on a held coin sells at once; max one entry and one exit per coin per candle, no re-entry in the candle of an exit; an arrow that disappears before the close does not undo the fill." : ""} Bot prices: Bot prices: ${esc(D.source || "Binance")}.` +
       (sw.length ? `<br><b>Switches:</b> ${sw.map(esc).join(" · ")}` : "") + `<br>Paper simulation only, not financial advice.`;
   }
 
@@ -868,6 +875,11 @@ window.RB = (function () {
     if (p.tf) D.tf = p.tf;
     if (p.sides) D.sides = p.sides;
     if ("filter" in p) D.entry_filter_2pct = !!p.filter;
+    if (p.rsi_filter) D.rsi_filter = p.rsi_filter;
+    if (p.rsi_filter_text) D.rsi_filter_text = p.rsi_filter_text;
+    if (p.rsi && typeof p.rsi === "object") {
+      (D.coins || []).forEach(c => { if (num(p.rsi[c.coin])) c.rsi = p.rsi[c.coin]; });
+    }
     if (p.balance != null) D.balance = p.balance;
     if (p.pnl != null) D.pnl = p.pnl;
     if (p.hb_ms) { D.heartbeat_ms = p.hb_ms; D.positions_as_of_ms = p.hb_ms; D.hb_age_s = Math.max(0, (Date.now() - p.hb_ms) / 1000); }
@@ -919,7 +931,7 @@ window.RB = (function () {
     if (resetCapBusy()) return;
     mergeSnapIntoD(p);
     try { V = view(); } catch (e) { V = D; }
-    if (D) { header(); if (V) { try { numbers(); positions(); poolCard(); } catch (e2) {} } }
+    if (D) { header(); if (V) { try { numbers(); cards(); cinfo(); positions(); poolCard(); } catch (e2) {} } }
   }
   let lpLiveBusy = false, lpLiveErrAt = 0;
   async function pollLive() {
