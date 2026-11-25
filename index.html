@@ -138,8 +138,15 @@ body.isStale #vSig .card,body.isStale #vDet .card{opacity:.45;transition:opacity
 .cc .m{font-size:11.5px;color:var(--mut);margin-top:3px;line-height:1.35;overflow-wrap:anywhere}
 .tagL{background:rgba(34,197,94,.18);color:var(--up);border-radius:6px;padding:1px 7px;font-size:11px;font-weight:750}
 .tagC{background:rgba(138,147,166,.18);color:var(--mut);border-radius:6px;padding:1px 7px;font-size:11px;font-weight:750}
-#rbEq{height:200px;max-width:none;aspect-ratio:auto;margin:0}#rbPx{height:340px}
-#rbEq,#rbPx{width:100%;overflow:hidden}
+#rbEq{height:200px;max-width:none;aspect-ratio:auto;margin:0}#rbPx{height:240px}#rbRsi{height:100px}
+#rbEq,#rbPx,#rbRsi{width:100%;overflow:hidden}
+.rsihead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:6px 0 2px;font-size:11.5px;color:var(--mut)}
+.rsihead b{font-variant-numeric:tabular-nums;font-size:14px;color:var(--tx)}
+.rsihead b.pos{color:var(--up)}.rsihead b.neg{color:var(--dn)}
+.rbRsiNow{font-weight:700;font-variant-numeric:tabular-nums;margin-left:8px}
+.rbRsiNow.pos{color:var(--up)}.rbRsiNow.neg{color:var(--dn)}
+#rbHeadCard{padding-bottom:10px}#rbHeadCard .rbinfo{display:none}
+#rbChartCard .legend{font-size:11.5px;line-height:1.45}
 .flt{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
 .flt select{flex:1;min-width:0}
 .flt .pseg{flex:1.4;min-width:0}
@@ -183,7 +190,7 @@ body.isStale #vSig .card,body.isStale #vDet .card{opacity:.45;transition:opacity
 #rbPoolC:not(.collapsed) #rbPoolSum{display:none}
 #rbPoolC.collapsed .pool-head{margin-bottom:0}
 
-@media(min-width:760px){.ccards{grid-template-columns:repeat(6,minmax(0,1fr))}.cc.wide{grid-column:span 3}#rbEq{height:220px;max-width:none}#rbPx{height:440px}.cinfo{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(min-width:760px){.ccards{grid-template-columns:repeat(6,minmax(0,1fr))}.cc.wide{grid-column:span 3}#rbEq{height:220px;max-width:none}#rbPx{height:320px}#rbRsi{height:130px}.cinfo{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .cc.wide{grid-column:1/-1}
 .cc.mini{padding:7px 9px;border-radius:10px}.cc.mini .n{font-size:14px}.cc.mini .m{margin-top:2px;font-variant-numeric:tabular-nums}.cc.mini .t.m{display:flex}
 .cc.exl{opacity:.55}.szp.sig{background:#1e3a8a;color:#bfdbfe}
@@ -213,11 +220,24 @@ body.isStale #vSig .card,body.isStale #vDet .card{opacity:.45;transition:opacity
 
 
   <section id="vBot">
-    <div class="card">
+    <div class="card" id="rbHeadCard">
       <div class="rbtop"><span class="pill stp" id="rbPill"><i></i><span id="rbPillT">LOADING</span></span><span class="pill stale hide" id="rbStalePill">STALE</span><span class="meta" id="rbMode"></span></div>
       <div class="rbdet" id="rbDetail"></div>
       <div class="meta" id="rbRsiLine" style="margin-top:4px;font-weight:600"></div>
       <div class="rbstale hide" id="rbStale"></div>
+      <div class="livebar"><span class="live" id="rbLive"><i></i><span id="rbLiveT">CONNECTING</span></span><span class="meta" id="rbLiveAt">connecting to Binance…</span></div>
+      <div class="phead"><div><div class="meta">Paper balance · live mark</div><div class="big" id="rbBal">–</div><div id="rbPnl" class="meta"></div></div>
+      <div class="cd">Next <span id="rbTf">–</span> bar close<br><b id="rbCd">–</b><div id="rbCdAt"></div></div></div>
+      <div class="kpis" id="rbKpis" style="margin-top:10px"></div><div class="meta" id="rbAsOf" style="margin-top:8px"></div>
+    </div>
+    <div class="card" id="rbChartCard"><div class="h3">Chart · <span id="rbPxT">–</span> <span class="rbRsiNow" id="rbRsiNow"></span></div><div class="pseg cseg" id="rbPxSeg"></div>
+      <div class="togs" id="rbTogs"></div>
+      <div class="legend"><span><i class="dot" style="background:#3b82f6"></i>Baseline</span><span><i class="dot" style="background:#64748b"></i>Channel</span><span><i class="dot" style="background:#a78bfa"></i>Exit line</span><span><i class="dot" style="background:#f59e0b"></i>SSL1</span><span><i class="dot" style="background:#22d3ee"></i>SSL2</span><span><b class="pos">▲ LONG</b> / <b class="neg">▼ SHORT</b> entries · <b>×</b> EXIT (P&amp;L) · faint arrows = RSI-skipped · <b class="pos">▲</b>/<b class="neg">▼</b> Exit Arrows</span></div>
+      <div id="rbPx"></div>
+      <div class="rsihead"><span>RSI(14) · active timeframe · guides at 35 / 65</span><b id="rbRsiVal">–</b></div>
+      <div id="rbRsi"></div>
+      <div class="cinfo" id="rbCinfo"></div><div class="meta" id="rbPxNote" style="margin-top:6px"></div></div>
+    <div class="card">
       <div class="rbinfo"><b>Data from the 24/7 paper bot, updated every 10 min.</b> Positions as of the export <b id="rbExp">–</b> WIB <span id="rbAgo"></span>; this page re-checks for a new export every 60 s. <b>P&amp;L is marked live</b> in your browser from Binance prices every 5 s. Paper trading only: no exchange keys, no real orders.</div>
       <div class="rb-ctl">
         <div class="rb-tf" id="rbTfSeg">
@@ -245,20 +265,10 @@ body.isStale #vSig .card,body.isStale #vDet .card{opacity:.45;transition:opacity
       </div>
       <div id="rbErr" class="err"></div>
     </div>
-    <div class="card" style="text-align:center"><div class="h3">Equity vs buy & hold</div><div class="legend" style="justify-content:center"><span><i class="dot" style="background:#22c55e"></i>Bot</span><span><i class="dot" style="background:#8a93a6"></i>Buy & hold</span></div><div id="rbEq"></div></div>
-    <div class="card">
-      <div class="livebar"><span class="live" id="rbLive"><i></i><span id="rbLiveT">CONNECTING</span></span><span class="meta" id="rbLiveAt">connecting to Binance…</span></div>
-      <div class="phead"><div><div class="meta">Paper balance · live mark</div><div class="big" id="rbBal">–</div><div id="rbPnl" class="meta"></div></div>
-      <div class="cd">Next <span id="rbTf">–</span> bar close<br><b id="rbCd">–</b><div id="rbCdAt"></div></div></div>
-      <div class="kpis" id="rbKpis" style="margin-top:10px"></div><div class="meta" id="rbAsOf" style="margin-top:8px"></div>
-    </div>
+    <div class="card" style="text-align:center"><div class="h3">Equity vs buy &amp; hold</div><div class="legend" style="justify-content:center"><span><i class="dot" style="background:#22c55e"></i>Bot</span><span><i class="dot" style="background:#8a93a6"></i>Buy &amp; hold</span></div><div id="rbEq"></div></div>
     <div class="rbpend hide" id="rbPend"></div>
     <div class="card hide" id="rbPoolC"><div class="h3 pool-head" id="rbPoolHead" role="button" tabindex="0" aria-expanded="true" aria-controls="rbPoolBody"><span class="pool-chevron" id="rbPoolChev" aria-hidden="true">▾</span> Pool <span class="meta" id="rbPoolH"></span><span class="meta" id="rbPoolSum"></span></div><div id="rbPoolBody"><div class="slots" id="rbSlots"></div><div class="meta" id="rbPoolN" style="margin-top:6px"></div><div class="h3" style="margin-top:10px;font-size:14px">Skipped arrows <span class="meta">· slots full, not queued</span></div><div id="rbSkip"></div></div></div>
     <div class="card"><div class="h3">Coins <span class="meta">· live prices · positions as of <span class="asof">–</span> · tap a coin for its chart</span></div><div class="ccards" id="rbCards"></div></div>
-    <div class="card" id="rbChartCard"><div class="h3">Chart · <span id="rbPxT">–</span></div><div class="pseg cseg" id="rbPxSeg"></div>
-      <div class="togs" id="rbTogs"></div>
-      <div class="legend"><span><i class="dot" style="background:#3b82f6"></i>Baseline</span><span><i class="dot" style="background:#64748b"></i>Channel</span><span><i class="dot" style="background:#a78bfa"></i>Exit line</span><span><i class="dot" style="background:#f59e0b"></i>SSL1</span><span><i class="dot" style="background:#22d3ee"></i>SSL2</span><span><b class="pos">▲</b>/<b class="neg">▼</b> Exit Arrows · <b style="color:#fde047">B</b>/<b style="color:#fde047">S</b> the bot's paper fills</span></div>
-      <div id="rbPx"></div><div class="cinfo" id="rbCinfo"></div><div class="meta" id="rbPxNote" style="margin-top:6px"></div></div>
     <div class="card"><div class="h3">Open positions <span class="meta">· as of <span class="asof">–</span> WIB, P&amp;L live</span></div><div class="tblwrap"><table id="rbPos"><thead><tr><th>Coin<span class="sub">size</span></th><th>Entry<span class="sub">time WIB</span></th><th>Now<span class="sub">net if sold</span></th><th>TP<span class="sub">SL</span></th><th>Unreal. $<span class="sub">%</span></th></tr></thead><tbody></tbody></table></div><div class="meta" id="rbPosNote"></div></div>
     <div class="card"><div class="h3">Trade log</div>
       <div class="flt"><select id="rbFCoin" aria-label="Filter by coin"></select><div class="pseg" id="rbFRes"></div></div>
@@ -455,9 +465,10 @@ window.RB = (function () {
     const el = $("rbResetCap");
     return !!(el && (document.activeElement === el || el.dataset.focused === "1"));
   }
-  let D = null, V = null, coin = localStorage.getItem("rbCoin") || null, fCoin = "ALL", fRes = "all", eqC, eqS, bhS, pxC, pxS = {}, lastFetch = 0, loading = false;
+  let D = null, V = null, coin = localStorage.getItem("rbCoin") || new URLSearchParams(location.search).get("coin"), fCoin = "ALL", fRes = "all", eqC, eqS, bhS, pxC, rsiC, pxS = {}, rsiS = {}, lastFetch = 0, loading = false, syncingRange = false;
+  if (coin) coin = String(coin).toUpperCase();
   let LP = {}, lpT = 0, lpSrc = "", lpIdx = 0, lpBusy = false, lpErr = "", pend = {}, pendT = 0;
-  const TOG = JSON.parse(localStorage.getItem("rbTogs") || '{"chan":true,"base":true,"exit":true,"ssl1":false,"ssl2":false,"arrows":true,"fills":true}');
+  const TOG = Object.assign({chan:true,base:true,exit:true,ssl1:false,ssl2:false,arrows:true,fills:true,skips:true}, JSON.parse(localStorage.getItem("rbTogs") || "{}"));
   const chartOpt = () => ({ autoSize: true, layout: { background: { color: "#141923" }, textColor: "#8a93a6", fontSize: 11 }, grid: { vertLines: { color: "#1e2533" }, horzLines: { color: "#1e2533" } }, rightPriceScale: { borderColor: "#262e3f" }, timeScale: { borderColor: "#262e3f", timeVisible: true, secondsVisible: false }, crosshair: { mode: 0 }, handleScroll: { vertTouchDrag: false } });
 
   // ---------- data ----------
@@ -619,7 +630,7 @@ window.RB = (function () {
     if (onBot()) { $("upd").textContent = alive ? ("Real bot · live " + (LIVE_SNAP && LIVE_SNAP.hb_wib ? String(LIVE_SNAP.hb_wib).slice(11, 19) : "") + " WIB") : ("Real bot · exported " + wib(D.exported_ms) + " WIB"); $("src").textContent = V && V.live ? "· live P&L" : ""; }
     liveBadge(); ctlMark();
   }
-  function render() { header(); numbers(); equity(); cards(); poolCard(); if (!coin || !D.coins.some(c => c.coin === coin)) coin = D.coins[0] && D.coins[0].coin; coinChart(false); positions(); filters(); trades(); events(); rules(); pendBanner(); }
+  function render() { header(); numbers(); equity(); cards(); poolCard(); if (!coin || !D.coins.some(c => c.coin === coin)) { const held = (D.open || []).find(o => o && o.coin) || D.coins.find(c => c.pos === "long" || c.pos === "short"); coin = (held && held.coin) || (D.coins[0] && D.coins[0].coin); } coinChart(false); positions(); filters(); trades(); events(); rules(); pendBanner(); }
 
   function numbers() {
     $("rbBal").textContent = usd(V.balance); $("rbBal").classList.remove("flash"); void $("rbBal").offsetWidth; if (V.live) $("rbBal").classList.add("flash");
@@ -674,15 +685,51 @@ window.RB = (function () {
   }
 
   function togs() {
-    const L = [["chan", "Channel"], ["base", "Baseline"], ["exit", "Exit line"], ["ssl1", "SSL1"], ["ssl2", "SSL2"], ["arrows", "Arrows"], ["fills", "B/S fills"]];
+    const L = [["chan", "Channel"], ["base", "Baseline"], ["exit", "Exit line"], ["ssl1", "SSL1"], ["ssl2", "SSL2"], ["arrows", "Arrows"], ["fills", "Trades"], ["skips", "RSI skips"]];
     $("rbTogs").innerHTML = L.map(([k, l]) => `<label><input type="checkbox" data-k="${k}" ${TOG[k] ? "checked" : ""}>${l}</label>`).join("");
     $("rbTogs").querySelectorAll("input").forEach(i => i.onchange = () => { TOG[i.dataset.k] = i.checked; localStorage.setItem("rbTogs", JSON.stringify(TOG)); coinChart(false); });
   }
-  let livePL = null;
+
+  let livePL = null, liveRsiPL = null;
+  function snapBar(times, ms) {
+    if (!times || !times.length || !num(ms)) return null;
+    let prev = null;
+    for (let i = 0; i < times.length; i++) {
+      const t = times[i];
+      if (t === ms) return t;
+      if (t > ms) return prev != null ? prev : t;
+      prev = t;
+    }
+    return prev;
+  }
+  function setRsiLabel(v) {
+    const txt = num(v) ? v.toFixed(1) : "–";
+    const k = num(v) ? (v < 35 ? "pos" : v > 65 ? "neg" : "") : "";
+    const el = $("rbRsiVal"), now = $("rbRsiNow");
+    if (el) { el.textContent = txt; el.className = k; }
+    if (now) { now.textContent = num(v) ? "RSI " + txt : ""; now.className = "rbRsiNow " + k; }
+  }
   function livePriceLine() {
     const c = V && V.coins.find(x => x.coin === coin); if (!pxS.c || !c || !c.live) return;
     if (livePL) { try { pxS.c.removePriceLine(livePL); } catch (e) {} }
     livePL = pxS.c.createPriceLine({ price: c.price, color: "#93c5fd", lineWidth: 1, lineStyle: 1, axisLabelVisible: true, title: "live" });
+    if (rsiS.rsi && num(c.rsi)) {
+      if (liveRsiPL) { try { rsiS.rsi.removePriceLine(liveRsiPL); } catch (e) {} }
+      liveRsiPL = rsiS.rsi.createPriceLine({ price: c.rsi, color: "#f59e0b", lineWidth: 1, lineStyle: 0, axisLabelVisible: true, title: "RSI" });
+      setRsiLabel(c.rsi);
+    }
+  }
+  function bindChartSync() {
+    if (!pxC || !rsiC || pxC._synced) return;
+    pxC._synced = true;
+    pxC.timeScale().subscribeVisibleLogicalRangeChange(r => {
+      if (syncingRange || !r || !rsiC) return;
+      syncingRange = true; try { rsiC.timeScale().setVisibleLogicalRange(r); } finally { syncingRange = false; }
+    });
+    rsiC.timeScale().subscribeVisibleLogicalRangeChange(r => {
+      if (syncingRange || !r || !pxC) return;
+      syncingRange = true; try { pxC.timeScale().setVisibleLogicalRange(r); } finally { syncingRange = false; }
+    });
   }
   function coinChart(scroll) {
     const c = D.coins.find(x => x.coin === coin); if (!c) return;
@@ -691,9 +738,14 @@ window.RB = (function () {
     if (!$("rbTogs").childElementCount) togs();
     $("rbPxT").textContent = `${c.coin}/USDT · ${D.tf}`;
     const ch = c.chart;
-    if (!pxC) pxC = LightweightCharts.createChart($("rbPx"), chartOpt());
+    const pxOpt = Object.assign(chartOpt(), { timeScale: { borderColor: "#262e3f", timeVisible: false, secondsVisible: false, visible: false } });
+    const rsiOpt = Object.assign(chartOpt(), { timeScale: { borderColor: "#262e3f", timeVisible: true, secondsVisible: false, visible: true } });
+    if (!pxC && $("rbPx")) pxC = LightweightCharts.createChart($("rbPx"), pxOpt);
+    if (!rsiC && $("rbRsi")) rsiC = LightweightCharts.createChart($("rbRsi"), rsiOpt);
+    bindChartSync();
     Object.values(pxS).forEach(s => { try { pxC.removeSeries(s); } catch (e) {} }); pxS = {}; livePL = null;
-    if (!ch || !ch.t || !ch.t.length) { $("rbPxNote").textContent = "No chart data for this coin yet."; return; }
+    Object.values(rsiS).forEach(s => { try { rsiC.removeSeries(s); } catch (e) {} }); rsiS = {}; liveRsiPL = null;
+    if (!ch || !ch.t || !ch.t.length) { $("rbPxNote").textContent = "No chart data for this coin yet."; setRsiLabel(c.rsi); return; }
     const pf = { type: "price", precision: prec(c.price), minMove: Math.pow(10, -prec(c.price)) };
     const line = (k, color, w, style) => { const s = pxC.addLineSeries({ color, lineWidth: w, lineStyle: style || 0, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, priceFormat: pf });
       s.setData(ch.t.map((t, i) => num(ch[k][i]) ? { time: T(t), value: ch[k][i] } : { time: T(t) })); pxS[k] = s; };
@@ -705,23 +757,58 @@ window.RB = (function () {
     const cs = pxC.addCandlestickSeries({ upColor: "#22c55e", downColor: "#ef4444", borderVisible: false, wickUpColor: "#22c55e", wickDownColor: "#ef4444", priceFormat: pf, priceLineVisible: false });
     cs.setData(ch.t.map((t, i) => ({ time: T(t), open: ch.o[i], high: ch.h[i], low: ch.l[i], close: ch.c[i] }))); pxS.c = cs;
     const tset = new Set(ch.t), m = [];
-    if (TOG.arrows) { (ch.au || []).forEach(t => tset.has(t) && m.push({ time: T(t), position: "belowBar", color: "#22c55e", shape: "arrowUp", size: 1 }));
-      (ch.ad || []).forEach(t => tset.has(t) && m.push({ time: T(t), position: "aboveBar", color: "#ef4444", shape: "arrowDown", size: 1 })); }
-    if (TOG.fills) (ch.fills || []).forEach(f => { const t = tset.has(f.t) ? f.t : ch.t.find(x => x >= f.t); if (t == null) return;
-      const open = f.side === "BUY" || f.side === "SHORT";
-      const lab = f.side === "BUY" ? "B" : f.side === "SHORT" ? "Sh" : f.side === "COVER" ? "C" : "S";
-      m.push({ time: T(t), position: open ? "belowBar" : "aboveBar", color: f.side === "SHORT" || f.side === "COVER" ? "#f87171" : "#fde047", shape: open ? "arrowUp" : "arrowDown", text: lab + (num(f.pnl) ? " " + usd(f.pnl, 1) : "") }); });
-    m.sort((a, b) => a.time - b.time); cs.setMarkers(m);
+    const hang = ms => { const t = tset.has(ms) ? ms : snapBar(ch.t, ms); return t != null ? T(t) : null; };
+    if (TOG.arrows) { (ch.au || []).forEach(t => tset.has(t) && m.push({ time: T(t), position: "belowBar", color: "#4ade80", shape: "arrowUp", size: 0.7 }));
+      (ch.ad || []).forEach(t => tset.has(t) && m.push({ time: T(t), position: "aboveBar", color: "#f87171", shape: "arrowDown", size: 0.7 })); }
+    if (TOG.skips !== false) (ch.skips || []).forEach(sk => {
+      const tm = hang(sk.t); if (tm == null) return;
+      const up = sk.side !== "short";
+      m.push({ time: tm, position: up ? "belowBar" : "aboveBar", color: "rgba(148,163,184,0.55)", shape: up ? "arrowUp" : "arrowDown", size: 0.7, text: num(sk.rsi) ? "RSI " + sk.rsi.toFixed(0) : "RSI" });
+    });
+    const marks = (ch.marks && ch.marks.length) ? ch.marks : [];
+    if (TOG.fills) {
+      marks.forEach(mk => {
+        const tm = hang(mk.t); if (tm == null) return;
+        if (mk.kind === "long") m.push({ time: tm, position: "belowBar", color: "#22c55e", shape: "arrowUp", text: "LONG" });
+        else if (mk.kind === "short") m.push({ time: tm, position: "aboveBar", color: "#ef4444", shape: "arrowDown", text: "SHORT" });
+        else if (mk.kind === "exit") m.push({ time: tm, position: "aboveBar", color: num(mk.pnl) && mk.pnl < 0 ? "#ef4444" : "#e2e8f0", shape: "square", text: "EXIT" + (num(mk.pnl) ? " " + usd(mk.pnl, 1) : "") });
+      });
+      if (!marks.length && (ch.fills || []).length) (ch.fills || []).forEach(f => {
+        const tm = hang(f.t); if (tm == null) return;
+        if (f.side === "BUY") m.push({ time: tm, position: "belowBar", color: "#22c55e", shape: "arrowUp", text: "LONG" });
+        else if (f.side === "SHORT") m.push({ time: tm, position: "aboveBar", color: "#ef4444", shape: "arrowDown", text: "SHORT" });
+        else m.push({ time: tm, position: "aboveBar", color: num(f.pnl) && f.pnl < 0 ? "#ef4444" : "#e2e8f0", shape: "square", text: "EXIT" + (num(f.pnl) ? " " + usd(f.pnl, 1) : "") });
+      });
+    }
+    m.sort((a, b) => a.time - b.time || String(a.text || "").localeCompare(String(b.text || ""))); cs.setMarkers(m);
     const heldC = c.pos === "long" || c.pos === "short";
-    if (heldC && num(c.entry)) cs.createPriceLine({ price: c.entry, color: "#fde047", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "entry" });
+    if (heldC && num(c.entry)) cs.createPriceLine({ price: c.entry, color: "#fde047", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: (c.pos === "short" ? "SHORT " : "LONG ") + "entry" });
     if (heldC && num(c.tp_px)) cs.createPriceLine({ price: c.tp_px, color: "#22c55e", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "TP +$" + (D.pool && D.pool.tp_usd) });
     if (heldC && num(c.sl_px)) cs.createPriceLine({ price: c.sl_px, color: "#ef4444", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "SL −$" + (D.pool && D.pool.sl_usd) });
-    const n = ch.t.length, vis = window.innerWidth < 760 ? 80 : 150;
-    if (n > vis) pxC.timeScale().setVisibleLogicalRange({ from: n - vis, to: n + 1 }); else pxC.timeScale().fitContent();
+    if (rsiC) {
+      const times = ch.t.map(T);
+      const rsiVals = (ch.rsi || []).map((v, i) => num(v) ? { time: times[i], value: v } : null).filter(Boolean);
+      const scale01 = () => ({ priceRange: { minValue: 0, maxValue: 100 } });
+      const os = rsiC.addAreaSeries({ topColor: "rgba(34,197,94,0.20)", bottomColor: "rgba(34,197,94,0.04)", lineColor: "rgba(34,197,94,0)", lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, autoscaleInfoProvider: scale01 });
+      os.setData(times.map(t => ({ time: t, value: 35 }))); rsiS.os = os;
+      const ob = rsiC.addBaselineSeries({ baseValue: { type: "price", price: 65 }, topFillColor1: "rgba(239,68,68,0.20)", topFillColor2: "rgba(239,68,68,0.05)", topLineColor: "rgba(239,68,68,0)", bottomFillColor1: "rgba(0,0,0,0)", bottomFillColor2: "rgba(0,0,0,0)", bottomLineColor: "rgba(0,0,0,0)", lineWidth: 1, lineVisible: false, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, autoscaleInfoProvider: scale01 });
+      ob.setData(times.map(t => ({ time: t, value: 100 }))); rsiS.ob = ob;
+      const rs = rsiC.addLineSeries({ color: "#f59e0b", lineWidth: 2, priceLineVisible: false, lastValueVisible: true, title: "RSI", priceFormat: { type: "price", precision: 1, minMove: 0.1 }, autoscaleInfoProvider: scale01 });
+      rs.setData(rsiVals); rsiS.rsi = rs;
+      rs.createPriceLine({ price: 35, color: "#22c55e", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "35" });
+      rs.createPriceLine({ price: 65, color: "#ef4444", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "65" });
+    }
+    const lastRsi = (ch.rsi || []).filter(num).pop();
+    setRsiLabel(num(c.rsi) ? c.rsi : lastRsi);
+    const n = ch.t.length, vis = window.innerWidth < 760 ? 70 : 150;
+    const range = n > vis ? { from: n - vis, to: n + 1 } : null;
+    if (range) { pxC.timeScale().setVisibleLogicalRange(range); if (rsiC) rsiC.timeScale().setVisibleLogicalRange(range); }
+    else { pxC.timeScale().fitContent(); if (rsiC) rsiC.timeScale().fitContent(); }
     livePriceLine(); cinfo();
-    $("rbPxNote").textContent = `Last ${n} closed ${D.tf} bars up to the bar opened ${wib(ch.t[n - 1])} WIB, from the bot's own indicator output (the dotted blue "live" line is the current price). Drag or pinch to scroll back/zoom.`;
+    $("rbPxNote").textContent = `Last ${n} closed ${D.tf} bars up to the bar opened ${wib(ch.t[n - 1])} WIB, from the bot's own indicator output (the dotted blue "live" line is the current price). Green ▲ LONG / red ▼ SHORT mark paper entries; × EXIT shows the close and P&L. Faint arrows are Exit Arrows skipped by the RSI filter. Drag or pinch to scroll back/zoom.`;
     if (scroll) $("rbChartCard").scrollIntoView({ behavior: "smooth", block: "start" });
   }
+
   function cinfo() {
     const c = V && V.coins.find(x => x.coin === coin); if (!c) return;
     const heldI = c.pos === "long" || c.pos === "short";
@@ -931,7 +1018,7 @@ window.RB = (function () {
     if (resetCapBusy()) return;
     mergeSnapIntoD(p);
     try { V = view(); } catch (e) { V = D; }
-    if (D) { header(); if (V) { try { numbers(); cards(); cinfo(); positions(); poolCard(); } catch (e2) {} } }
+    if (D) { header(); if (V) { try { numbers(); cards(); cinfo(); positions(); poolCard(); const cc = V.coins.find(x => x.coin === coin); if (cc) setRsiLabel(cc.rsi); livePriceLine(); } catch (e2) {} } }
   }
   let lpLiveBusy = false, lpLiveErrAt = 0;
   async function pollLive() {
